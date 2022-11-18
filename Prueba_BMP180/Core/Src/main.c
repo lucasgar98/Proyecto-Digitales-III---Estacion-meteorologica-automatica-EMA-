@@ -21,17 +21,18 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "BMP180.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* Definimos una variable tipo enumeración para guardar los valores que puede tomar el parámetro oss
- * (oversampling setting) */
+ * (oversampling setting)
 typedef enum BMP180_OSS {
 	BMP180_LOW, BMP180_STANDARD, BMP180_HIGH, BMP180_ULTRA,
 } BMP180_OSS;
-/* Definimos una variable tipo estructura para guardar los coeficientes de calibración */
+ Definimos una variable tipo estructura para guardar los coeficientes de calibración
 typedef struct BMP180_E2PROM {
 	short BMP180_AC1;
 	short BMP180_AC2;
@@ -44,12 +45,13 @@ typedef struct BMP180_E2PROM {
 	short BMP180_MB;
 	short BMP180_MC;
 	short BMP180_MD;
-} BMP180_E2PROM;
+} BMP180_E2PROM;*/
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+/*
 #define I2C_ADDRESS_BMP180 0x77 // Dirección I2C del sensor BMP180
 #define CR_ADDRESS 0xF4 // Dirección del registro de control (CR)
 #define MSB_REG_ADDRESS 0xF6 // Dirección del registro que almacena el MSB
@@ -60,6 +62,7 @@ typedef struct BMP180_E2PROM {
 #define CR_VALUE_PRES_OSS1 0x74 // Valor a escribir en el CR para iniciar la medición de presión en modo estándar
 #define CR_VALUE_PRES_OSS2 0xB4 // Valor a escribir en el CR para iniciar la medición de presión en modo alta resolución
 #define CR_VALUE_PRES_OSS3 0xF4 // Valor a escribir en el CR para iniciar la medición de presión en modo ultra alta resolución
+*/
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,7 +71,9 @@ typedef struct BMP180_E2PROM {
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- I2C_HandleTypeDef hi2c2;
+I2C_HandleTypeDef hi2c2;
+
+UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
@@ -78,26 +83,27 @@ typedef struct BMP180_E2PROM {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-float BMP180_Get_TrueTemperature(void);
-float BMP180_Get_TruePressure(BMP180_OSS);
+/*float BMP180_Get_TrueTemperature(void);
+float BMP180_Get_TruePressure(uint8_t);
 void BMP180_Get_AllCalCoef(void);
 long BMP180_Get_RawTemperature(void);
 long BMP180_Get_RawPressure(uint8_t);
 short BMP180_Get_CalCoef1(uint8_t,uint8_t);
 unsigned short BMP180_Get_CalCoef2(uint8_t,uint8_t);
 void BMP180_WriteRegister(uint8_t,uint8_t);
-uint8_t BMP180_ReadRegister(uint8_t);
+uint8_t BMP180_ReadRegister(uint8_t);*/
 
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/* Direcciones de los bytes más significativos de los coeficientes de calibración */
+/*
+ Direcciones de los bytes más significativos de los coeficientes de calibración
 uint8_t DIR_MSB_COEF[11]={0xAA,0xAC,0xAE,0xB0,0xB2,0xB4,0xB6,0xB8,0xBA,0xBC,0xBE};
-/* Direcciones de los bytes menos significativos de los coeficientes de calibración */
+ Direcciones de los bytes menos significativos de los coeficientes de calibración
 uint8_t DIR_LSB_COEF[11]={0xAB,0xAD,0xAF,0xB1,0xB3,0xB5,0xB7,0xB9,0xBB,0xBD,0xBF};
 BMP180_E2PROM calibcoef;
 
@@ -120,10 +126,10 @@ short BMP180_Get_CalCoef1(uint8_t DIRMSB,uint8_t DIRLSB){
 	uint8_t MSB,LSB;
 	short calcoef;
 
-	/* Leemos el byte más significativo del coeficiente */
+	 Leemos el byte más significativo del coeficiente
 	MSB=BMP180_ReadRegister(DIRMSB);
 
-	/* Leemos el byte menos significativo del coeficiente */
+	 Leemos el byte menos significativo del coeficiente
 	LSB=BMP180_ReadRegister(DIRLSB);
 
 	calcoef=(MSB<<8)|LSB;
@@ -137,10 +143,10 @@ unsigned short BMP180_Get_CalCoef2(uint8_t dirmsb,uint8_t dirlsb){
 	uint8_t MSB,LSB;
 	unsigned short calcoef;
 
-	/* Leemos el byte más significativo del coeficiente */
+	 Leemos el byte más significativo del coeficiente¨
 	MSB=BMP180_ReadRegister(dirmsb);
 
-	/* Leemos el byte menos significativo del coeficiente */
+	 Leemos el byte menos significativo del coeficiente
 	LSB=BMP180_ReadRegister(dirlsb);
 
 	calcoef=(MSB<<8)|LSB;
@@ -171,10 +177,11 @@ long BMP180_Get_RawTemperature(void){
 	uint8_t MSBTEMP,LSBTEMP; // Bytes correspondientes al dato de temperatura
 	long UT;
 
-	/* Escribimos primero el registro de control con el valor 0x2E y esperamos 5 ms */
+	Escribimos primero el registro de control con el valor 0x2E y esperamos 5 ms
 	BMP180_WriteRegister(dircr,valcr);
 	HAL_Delay(5); // Demora de 5 ms
-	/* Obtenemos el byte más significativo y el byte menos signficativo del dato de temperatura */
+
+	Obtenemos el byte más significativo y el byte menos signficativo del dato de temperatura
 	MSBTEMP=BMP180_ReadRegister(MSB_REG_ADDRESS);
 	LSBTEMP=BMP180_ReadRegister(LSB_REG_ADDRESS);
 
@@ -183,20 +190,20 @@ long BMP180_Get_RawTemperature(void){
 	return UT;
 }
 
-long BMP180_Get_RawPressure(BMP180_OSS OSS){
+long BMP180_Get_RawPressure(uint8_t OSS){
 
 	uint8_t DIRCR=CR_ADDRESS; // Dirección del registro de control
 	uint8_t VALCR; // Valor a escribir en el registro de control para obtener el dato de presión
 	uint8_t MSBPRES,LSBPRES,XLSBPRES; // Bytes correspondientes al dato de presión
 	long UP;
 
-	/* El valor a escribir en el registro de control dependerá del modo de precisión en la conversión de la
+	 El valor a escribir en el registro de control dependerá del modo de precisión en la conversión de la
 	 * presión, el cual puede seleccionarse a partir del parámetro oss (oversampling setting). Este parámetro
 	 * puede tomar cuatro valores diferentes:
 	 * - oss = 0 --> Ultra low power (modo de ultra bajo consumo)
 	 * - oss = 1 --> Standard (modo estándar)
 	 * - oss = 2 --> High resolution (modo de alta resolución)
-	 * - oss = 3 --> Ultra high resolution (modo de ultra alta resolución) */
+	 * - oss = 3 --> Ultra high resolution (modo de ultra alta resolución)
 
 	switch(OSS){
 	case 0:{
@@ -225,9 +232,9 @@ long BMP180_Get_RawPressure(BMP180_OSS OSS){
 	break;
 	}
 
-	/* Obtenemos el byte más significativo y el byte menos signficativo del dato de presión. Si el modo
+	 Obtenemos el byte más significativo y el byte menos signficativo del dato de presión. Si el modo
 	 * de conversión elegido es de ultra alta resolución, el dato de presión ocupará 19 bits. Por esta razón,
-	 * en este caso se debe obtener un byte adicional denominado XLSB */
+	 * en este caso se debe obtener un byte adicional denominado XLSB
 	MSBPRES=BMP180_ReadRegister(MSB_REG_ADDRESS);
 	LSBPRES=BMP180_ReadRegister(LSB_REG_ADDRESS);
 	XLSBPRES=BMP180_ReadRegister(XLSB_REG_ADDRESS);
@@ -245,7 +252,7 @@ float BMP180_Get_TrueTemperature(void){
 	unsigned short AC5,AC6;
 	int32_t TEMP;
 
-	/* Guardamos los coeficientes de calibración obtenidos en las variables definidas anteriormente */
+	 Guardamos los coeficientes de calibración obtenidos en las variables definidas anteriormente
 	AC5=calibcoef.BMP180_AC5;
 	AC6=calibcoef.BMP180_AC6;
 	MC=calibcoef.BMP180_MC;
@@ -253,8 +260,8 @@ float BMP180_Get_TrueTemperature(void){
 
 	UTEMP=BMP180_Get_RawTemperature(); // Obtenemos el dato de temperatura en crudo
 
-	/* Para obtener el dato real de temperatura en °C, es necesario realizar algunos cálculos auxiliares que
-	 * están definidos en la hoja de datos del BMP180 */
+	 Para obtener el dato real de temperatura en °C, es necesario realizar algunos cálculos auxiliares que
+	 * están definidos en la hoja de datos del BMP180
 	X1=(UTEMP-AC6)*AC5/32768;
 	X2=MC*2048/(X1+MD);
 	B5=X1+X2;
@@ -263,7 +270,7 @@ float BMP180_Get_TrueTemperature(void){
 	return TEMP/10.0; // Retornamos la temperatura en °C
 }
 
-float BMP180_Get_TruePressure(BMP180_OSS oss){
+float BMP180_Get_TruePressure(uint8_t oss){
 
 	int32_t UTEMP,UPRES,X1,X2,X3,B3,B5,B6;
 	uint32_t B4,B7;
@@ -271,7 +278,7 @@ float BMP180_Get_TruePressure(BMP180_OSS oss){
 	unsigned short AC4,AC5,AC6;
 	int32_t PRES; // Variable para guardar el valor de presión
 
-	/* Guardamos los coeficientes de calibración obtenidos en las variables definidas anteriormente */
+	 Guardamos los coeficientes de calibración obtenidos en las variables definidas anteriormente
 	AC1=calibcoef.BMP180_AC1;
 	AC2=calibcoef.BMP180_AC2;
 	AC3=calibcoef.BMP180_AC3;
@@ -312,7 +319,7 @@ float BMP180_Get_TruePressure(BMP180_OSS oss){
 
 	return PRES/100.0; // Retornamos la presión en hPa
 
-}
+}*/
 
 /* USER CODE END 0 */
 
@@ -345,10 +352,12 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   BMP180_Get_AllCalCoef(); // Obtenemos todos los coeficientes de calibración
 
   float temp,pres;
+  uint8_t buffer[40];
 
   /* USER CODE END 2 */
 
@@ -361,7 +370,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  temp=BMP180_Get_TrueTemperature();
 	  pres=BMP180_Get_TruePressure(BMP180_STANDARD);
-	  HAL_Delay(500);
+	  sprintf((char*)buffer,"*ATemperatura: %2.1f°C\n*",temp);
+	  HAL_UART_Transmit(&huart1, buffer, sizeof(buffer), 100);
+	  sprintf((char*)buffer,"*APresión atmosférica: %4.1f hPa\n*",pres);
+	  HAL_UART_Transmit(&huart1, buffer, sizeof(buffer), 100);
+	  HAL_Delay(200);
   }
   /* USER CODE END 3 */
 }
@@ -436,6 +449,39 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 
