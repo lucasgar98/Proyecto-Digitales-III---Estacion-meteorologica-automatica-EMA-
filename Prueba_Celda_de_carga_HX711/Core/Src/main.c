@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,6 +44,8 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -51,6 +54,7 @@ TIM_HandleTypeDef htim1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void Delay_Microseconds(uint16_t);
 uint32_t HX711_Read_Value(_Bool);
@@ -61,7 +65,13 @@ float HX711_Set_Scale(uint16_t,uint8_t);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-_Bool flag_pulsador=0;
+//_Bool flag_pulsador=0;
+_Bool flag_recepcion=0;
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+
+	flag_recepcion=1;
+}
 
 void Delay_Microseconds(uint16_t us)
 {
@@ -136,10 +146,10 @@ float HX711_Set_Scale(uint16_t pesoreal, uint8_t cantmuestras){
 	return scale;
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t pin){
+/*void HAL_GPIO_EXTI_Callback(uint16_t pin){
 
 	flag_pulsador=1;
-}
+}*/
 
 /* USER CODE END 0 */
 
@@ -172,6 +182,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim1);
 
@@ -184,16 +195,42 @@ int main(void)
   uint32_t val2; // Variable para guardar el valor leído del sensor cuando se coloca un peso conocido
   float m=0,b=0;
   uint32_t val; // Valor leído del sensor
+  uint8_t buf[40];
+  uint8_t buf2[1];
 
+  sprintf((char*)buf,"*AEstableciendo tara...\n*");
+  HAL_UART_Transmit(&huart1, buf, strlen((const char*)buf),100);
   tara=HX711_Read_Average(20); // Establecemos la tara del sensor
-  /* Mientras no se coloque un objeto sobre la celda de carga, el programa se queda esperando. Una vez que
-   * el usuario coloca el peso conocido, debe presionar el pulsador para que avance el programa y obtenga
-   * el valor leído del sensor asociado a ese peso conocido */
-  while(flag_pulsador==0){
+
+  sprintf((char*)buf,"*AInserte un peso conocido\n*");
+  HAL_UART_Transmit(&huart1, buf, strlen((const char*)buf),100);
+/*  while(flag_recepcion==0){
+	  HAL_UART_Receive_IT(&huart1, buf2, sizeof(buf2));
+  }*/
+  flag_recepcion=0;
+  //HAL_UART_Receive(&huart1, buf2, sizeof(buf2), 100)
+  while(HAL_UART_Receive(&huart1, buf2, sizeof(buf2), 1) != HAL_OK){
+		 Delay_Microseconds(1);
   }
   val2=HX711_Read_Average(20); // Valor asociado al peso conocido
   m=(P2-P1)/(val2-tara);
   b=P1-m*tara;
+  sprintf((char*)buf,"*AEscala de peso ajustada\n*");
+  HAL_UART_Transmit(&huart1, buf, strlen((const char*)buf),100);
+  sprintf((char*)buf,"*ARetirar objeto\n*");
+  HAL_UART_Transmit(&huart1, buf, strlen((const char*)buf),100);
+  while(HAL_UART_Receive(&huart1, buf2, sizeof(buf2), 1) != HAL_OK){
+	 Delay_Microseconds(1);
+  }
+  /*tara=HX711_Read_Average(20); // Establecemos la tara del sensor
+   Mientras no se coloque un objeto sobre la celda de carga, el programa se queda esperando. Una vez que
+   * el usuario coloca el peso conocido, debe presionar el pulsador para que avance el programa y obtenga
+   * el valor leído del sensor asociado a ese peso conocido
+  while(flag_pulsador==0){
+  }
+  val2=HX711_Read_Average(20); // Valor asociado al peso conocido
+  m=(P2-P1)/(val2-tara);
+  b=P1-m*tara;*/
   //escala = HX711_Set_Scale(500,20);
 
   //coefcal=(HX711_Read_Average(20)-tara)/escala;
@@ -211,6 +248,8 @@ int main(void)
 	  //bin=HX711_Read_Value(1);
 	  val=HX711_Read_Average(20);
 	  peso=m*val+b;
+	  sprintf((char*)buf,"*APeso del objeto: %4.1f\n*",peso);
+	  HAL_UART_Transmit(&huart1, buf, strlen((const char*)buf),100);
 
   }
   /* USER CODE END 3 */
@@ -298,6 +337,39 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 
