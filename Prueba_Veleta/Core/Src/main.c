@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,6 +104,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   uint32_t sumvol=0;
   float promvol;
+  uint8_t buffer[40];
 
   /* USER CODE END 2 */
 
@@ -115,18 +117,24 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  while(cant<100){
 		  HAL_ADC_Start_IT(&hadc1);
-		  HAL_Delay(1);
+		  /*HAL_ADC_PollForConversion(&hadc1, 1);
+		  val[cant]=HAL_ADC_GetValue(&hadc1);
+	      vol[cant]=val[cant]*3300/4095;
+	      cant++;*/
 		  if(flag_conversion == 1){
 			  flag_conversion=0;
 			  val[cant]=HAL_ADC_GetValue(&hadc1);
 		      vol[cant]=val[cant]*3300/4095;
 			  cant++;
+			  HAL_Delay(1);
 		  }
 	  }
 	  for(int i=0;i<cant;i++){
 		  sumvol=sumvol+vol[i];
 	  }
 	  promvol=sumvol/cant;
+      sprintf((char*)buffer,"*ATensión analógica: %4.1f mV \n*",promvol);
+	  HAL_UART_Transmit(&huart1, buffer, strlen((const char*)buffer),100);
 	  sumvol=0;
 	  cant=0;
   }
@@ -152,7 +160,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL7;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL5;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -167,12 +175,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -213,7 +221,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Channel = ADC_CHANNEL_9;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -242,7 +250,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
