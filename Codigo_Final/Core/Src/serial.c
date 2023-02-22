@@ -138,10 +138,12 @@ void Escribir_Caracter(char car[],char carfinal[]){
 
 	uint8_t buffer[5];
 	uint32_t output;
+	char str[5];
 
-	strcat(car,carfinal);
+	strcpy(str,car);
+	strcat(str,carfinal);
 
-	sprintf((char*)buffer,"%s",car);
+	sprintf((char*)buffer,"%s",str);
 
 	if (f_write(&USERFile,buffer,strlen((const char*)buffer),(void*)&output)==FR_OK){
 		Serial_Print("R0G255B0",'C'); // Encendemos un indicador verde si el archivo se escribió correctamente

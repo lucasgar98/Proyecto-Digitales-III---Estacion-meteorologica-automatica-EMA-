@@ -112,7 +112,6 @@ void HX711_Set_Scale(uint8_t cantmuest){
 
 	 Serial_Println("Estableciendo tara...",'A');
 	 tara=HX711_Read_Average(cantmuest); // Establecemos la tara del sensor
-	 //rectapeso.x1=tara;
 
 	 /* Hallamos la pendiente y la ordenada al origen de la recta de peso */
 	 rectapeso.m=(P2-P1)/(val2-tara);

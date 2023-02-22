@@ -35,12 +35,12 @@
 /* USER CODE BEGIN PTD */
 /* Definimos una estructura para guardar los datos meteorológicos adquiridos */
 typedef struct METEO_DATA {
-	float temp;
-	float humrel;
-	float pres;
-	float velviento;
-	DIR_VIENTO dirviento;
-	float precip;
+	float temp; // Temperatura (en °C) -
+	float humrel; // Humedad relativa (en %)
+	float pres; // Presión atmosférica (en hPa)
+	float velviento; // Velocidad del viento (en km/h)
+	DIR_VIENTO dirviento; // Dirección del viento
+	float precip; // Precipitación acumulada (en mm)
 } METEO_DATA;
 
 /* USER CODE END PTD */
@@ -342,7 +342,7 @@ int main(void)
   f_mount(&USERFatFS,USERPath,0);
 
   /* Creamos un archivo de texto llamado "METEODATA" para poder guardar los datos meteorológicos */
-  f_open(&USERFile,"Datos21.txt",FA_CREATE_ALWAYS | FA_WRITE);
+  f_open(&USERFile,"Datos.txt",FA_CREATE_ALWAYS | FA_WRITE);
 
   /* Limpiamos las interrupciones pendientes de los timers y el ADC */
   __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
@@ -372,7 +372,7 @@ int main(void)
 	  Tomar_Muestras_Viento(&dirvelviento); // Tomamos muestras de la dir. y vel. del viento cada 3 s
 	  /* Si pasaron 5 minutos desde la última adquisición de datos, adquirimos datos nuevamente para luego
 	   * enviarlos a la app y almacenarlos en la memoria */
-	  if(contminutos==3){
+	  if(contminutos==5){
 		  contminutos=0; // Resetemaos el contador de minutos
 		  Adquirir_Datos(&datos);
 		  /* Obtenemos primero la fecha y hora actual para luego enviar y almacenar los datos */
@@ -384,12 +384,11 @@ int main(void)
 	  /* Preguntamos si se recibió la palabra 'TARA' a través del puerto serie. De ser así, procedemos a ajustar
 	   * nuevamente la tara del sensor */
 	  if(HAL_UART_Receive(&huart1, buffer, 4, 10) == HAL_OK){
-		  /* Para saber si recibimos la palabra TARA, evaluamos cada uno de los valores en ASCII recibidos.
-		   * - buffer[0]=84 (T)
-		   * - buffer[1]=65 (A)
-		   * - buffer[2]=82 (R)
-		   * - buffer[3]=65 (A)
-		   */
+		  /* Para saber si recibimos la palabra 'TARA' evaluamos los valores en ASCII recibidos.
+		   * - buffer[0]==84 (T)
+		   * - buffer[1]==65 (A)
+		   * - buffer[2]==82 (R)
+		   * - buffer[3]==65 (A) */
 		  if(buffer[0]==84 && buffer[1]==65 && buffer[2]==82 && buffer[3]==65){
 			  HX711_Set_Tare(20);
 		  }
