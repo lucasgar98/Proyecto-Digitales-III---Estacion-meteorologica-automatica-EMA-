@@ -18,7 +18,7 @@
 #define negativo 1 // Signo del ángulo (negativo)
 #define INT_PULSOS 3.0 // Intervalo de tiempo en el que se cuentan los pulsos del anemómetro (3 segundos)
 #define FACTOR_CONV 2.4 // Factor de conversión para obtener la velocidad del viento
-#define N1 60 // Número de muestras de la dir. y vel. del viento a tomar en un intervalo de tiempo de 5 min
+#define N1 100 // Número de muestras de la dir. y vel. del viento a tomar en un intervalo de tiempo de 5 min
 
 /* Variable estructura para guardar las muestras de la dirección y velocidad del viento */
 typedef struct VIENTO{
@@ -34,7 +34,7 @@ typedef enum DIR_VIENTO{
 	NE = 45,
 	E = 90,
 	SE = 135,
-	S = 180,
+	S = -180,
 	SW = -135,
 	W = -90,
 	NW = -45,

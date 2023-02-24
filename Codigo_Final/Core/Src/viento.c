@@ -67,8 +67,8 @@ uint8_t Detectar_Angulo(float volprom, _Bool tipo){
 		signo=positivo;
 	}
 	else if(185<volprom && volprom<300){
-		angulo=S;
-		signo=positivo;
+		angulo=fabs(S);
+		signo=negativo;
 	}
 	else if(380<volprom && volprom<600){
 		angulo=NE;
